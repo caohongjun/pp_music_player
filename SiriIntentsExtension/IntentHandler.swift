@@ -344,7 +344,7 @@ private enum SiriLanguageModelSongMatcher {
         \(catalog)
         """
         let session = LanguageModelSession()
-        let options = GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 4)
+        let options = GenerationOptions(sampling: .greedy, maximumResponseTokens: 4)
         guard let response = try? await session.respond(to: prompt, options: options) else { return nil }
         let answer = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         if answer.uppercased().contains("NONE") { return nil }

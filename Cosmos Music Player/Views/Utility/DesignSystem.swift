@@ -719,6 +719,7 @@ struct DetailPage<Header: View, Rows: View>: View {
 
     /// iPhone Duo held open like a book: the system splits the page at the
     /// fold - cover and buttons on one half, songs on the other.
+    #if canImport(SwiftUI, _version: 8.0)
     @available(iOS 27.1, *)
     private var foldingSplit: some View {
         ArrangementView {
@@ -736,6 +737,11 @@ struct DetailPage<Header: View, Rows: View>: View {
         }
         .arrangementViewStyle(.split.axes(.horizontal))
     }
+    #else
+    /// 旧 SDK 没有 `ArrangementView`；`foldDividesPage` 在旧 SDK 下恒为 false，
+    /// 这个分支不会被执行，仅用于满足编译。
+    private var foldingSplit: some View { EmptyView() }
+    #endif
 
     private static func headerColumnWidth(for width: CGFloat) -> CGFloat {
         min(440, max(300, width * 0.36))
@@ -994,3 +1000,44 @@ private struct DebugScrollToBottom: ViewModifier {
         #endif
     }
 }
+
+// MARK: - iOS 27 SDK compatibility
+
+#if !canImport(SwiftUI, _version: 8.0)
+/// `reservedRegions` / `ReservedRegion` 只在 iOS 27 SDK 中提供。用更早的 SDK
+/// 构建时给出签名一致的兜底实现：运行时始终返回“无折叠区域”，折叠屏（iPhone Duo）
+/// 专属适配自动退化为普通设备表现，其余布局逻辑不受影响。
+struct ReservedRegion: Equatable {
+    struct Kind: Equatable {
+        static let occlusion = Kind()
+        static let division = Kind()
+    }
+
+    struct Margins: Equatable {
+        var leading: CGFloat = 0
+    }
+
+    var frame: CGRect = .zero
+    var margins: Margins = Margins()
+    var isActive: Bool = false
+}
+
+extension GeometryProxy {
+    struct CosmosReservedRegionOptions: OptionSet {
+        let rawValue: Int
+        static let includeInactive = CosmosReservedRegionOptions(rawValue: 1)
+    }
+
+    enum CosmosReservedRegionLayoutDirectionBehavior: Equatable {
+        case fixed
+    }
+
+    func reservedRegions(
+        kind: ReservedRegion.Kind,
+        options: CosmosReservedRegionOptions = [],
+        layoutDirectionBehavior: CosmosReservedRegionLayoutDirectionBehavior = .fixed
+    ) -> [ReservedRegion] {
+        []
+    }
+}
+#endif

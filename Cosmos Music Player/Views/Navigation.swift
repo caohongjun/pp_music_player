@@ -617,9 +617,13 @@ private struct DefaultSidebarPlacement: ViewModifier {
         GeometryReader { geometry in
             let placement: AdaptableTabBarPlacement = Self.opensSidebar(in: geometry) ? .sidebar : .tabBar
             if #available(iOS 27.0, *) {
+                #if canImport(SwiftUI, _version: 8.0)
                 content
                     .defaultAdaptableTabBarPlacement(placement)
                     .defaultTabBarPlacement(placement)
+                #else
+                content.defaultAdaptableTabBarPlacement(placement)
+                #endif
             } else {
                 content.defaultAdaptableTabBarPlacement(placement)
             }
@@ -636,8 +640,12 @@ private struct DefaultSidebarPlacement: ViewModifier {
     /// back to the tab bar, which on a phone lists every tab - the library's
     /// sections too - and pushed Search into a More tab.
     nonisolated private static func isFoldableHeldOpenLikeABook(_ geometry: GeometryProxy) -> Bool {
+        #if canImport(SwiftUI, _version: 8.0)
         guard #available(iOS 27.1, *), geometry.size.width > geometry.size.height else { return false }
         return !geometry.reservedRegions(kind: .division, options: .includeInactive).isEmpty
+        #else
+        return false
+        #endif
     }
 }
 

@@ -303,6 +303,7 @@ struct PlayerView: View {
     /// and the controls on the bottom half, the steady part to touch; held
     /// like a book or open flat, they sit side by side. Nothing straddles
     /// the fold.
+    #if canImport(SwiftUI, _version: 8.0)
     @available(iOS 27.1, *)
     private func foldableLayout(track: Track) -> some View {
         VStack(spacing: 0) {
@@ -341,7 +342,10 @@ struct PlayerView: View {
             .arrangementViewStyle(.split)
         }
     }
-
+    #else
+    /// 旧 SDK 没有 `ArrangementView`；折叠态判断恒为 false，此布局不会被使用。
+    private func foldableLayout(track: Track) -> some View { EmptyView() }
+    #endif
     private func wideLayout(track: Track, size: CGSize) -> some View {
         let columnWidth = min(460, size.width * 0.42)
         let artworkSize = max(200, min(columnWidth, size.height * 0.48))
@@ -1210,7 +1214,12 @@ private struct FoldStage<Content: View>: View {
 @available(iOS 27.1, *)
 private struct FoldDeck<Content: View>: View {
     @ViewBuilder let content: () -> Content
+    // `splitArrangementAxis` 只存在于 iOS 27 SDK；用旧 SDK 构建时退化为常规布局。
+    #if canImport(SwiftUI, _version: 8.0)
     @Environment(\.splitArrangementAxis) private var axis
+    #else
+    private let axis: Axis = .horizontal
+    #endif
 
     var body: some View {
         VStack(spacing: 0) {
